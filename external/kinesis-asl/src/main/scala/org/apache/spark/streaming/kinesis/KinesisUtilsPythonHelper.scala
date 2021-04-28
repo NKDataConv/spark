@@ -40,13 +40,29 @@ private class KinesisUtilsPythonHelper {
       storageLevel: StorageLevel,
       awsAccessKeyId: String,
       awsSecretKey: String,
-      stsAssumeRoleArn: String,
-      stsSessionName: String,
-      stsExternalId: String): JavaReceiverInputDStream[Array[Byte]] = {
+      stsAssumeRoleArnKinesis: String,
+      stsSessionNameKinesis: String,
+      stsExternalIdKinesis: String,
+      stsAssumeRoleArnDynamoDB: String,
+      stsSessionNameDynamoDB: String,
+      stsExternalIdDynamoDB: String,
+      stsAssumeRoleArnCloudWatch: String,
+      stsSessionNameCloudWatch: String,
+      stsExternalIdCloudWatch: String): JavaReceiverInputDStream[Array[Byte]] = {
     // scalastyle:on
-    if (!(stsAssumeRoleArn != null && stsSessionName != null && stsExternalId != null)
-        && !(stsAssumeRoleArn == null && stsSessionName == null && stsExternalId == null)) {
-      throw new IllegalArgumentException("stsAssumeRoleArn, stsSessionName, and stsExternalId " +
+    if (!(stsAssumeRoleArnKinesis != null && stsSessionNameKinesis != null && stsExternalIdKinesis != null)
+        && !(stsAssumeRoleArnKinesis == null && stsSessionNameKinesis == null && stsExternalIdKinesis == null)) {
+      throw new IllegalArgumentException("stsAssumeRoleArnKinesis, stsSessionNameKinesis, and stsExternalIdKinesis " +
+        "must all be defined or all be null")
+    }
+    if (!(stsAssumeRoleArnDynamoDB != null && stsSessionNameDynamoDB != null && stsExternalIdDynamoDB != null)
+        && !(stsAssumeRoleArnDynamoDB == null && stsSessionNameDynamoDB == null && stsExternalIdDynamoDB == null)) {
+      throw new IllegalArgumentException("stsAssumeRoleArnDynamoDB, stsSessionNameDynamoDB, and stsExternalIdDynamoDB " +
+        "must all be defined or all be null")
+    }
+    if (!(stsAssumeRoleArnDynamoDB != null && stsSessionNameCloudWatch != null && stsExternalIdCloudWatch != null)
+        && !(stsAssumeRoleArnDynamoDB == null && stsSessionNameCloudWatch == null && stsExternalIdCloudWatch == null)) {
+      throw new IllegalArgumentException("stsAssumeRoleArnDynamoDB, stsSessionNameCloudWatch, and stsExternalIdCloudWatch " +
         "must all be defined or all be null")
     }
     if (awsAccessKeyId == null && awsSecretKey != null) {
@@ -74,12 +90,20 @@ private class KinesisUtilsPythonHelper {
       checkpointInterval(checkpointInterval).
       storageLevel(storageLevel)
 
-    if (stsAssumeRoleArn != null && stsSessionName != null && stsExternalId != null) {
+    if (stsAssumeRoleArnKinesis != null && stsSessionNameKinesis != null && stsExternalIdKinesis != null) {
       val kinesisCredsProvider = STSCredentials(
-        stsAssumeRoleArn, stsSessionName, Option(stsExternalId),
+        stsAssumeRoleArnKinesis, stsSessionNameKinesis, Option(stsExternalIdKinesis),
+        BasicCredentials(awsAccessKeyId, awsSecretKey))
+      val dynamoDBCredsProvider = STSCredentials(
+        stsAssumeRoleArnDynamoDB, stsSessionNameDynamoDB, Option(stsExternalIdDynamoDB),
+        BasicCredentials(awsAccessKeyId, awsSecretKey))
+      val cloudWatchCredsProvider = STSCredentials(
+        stsAssumeRoleArnCloudWatch, stsSessionNameCloudWatch, Option(stsExternalIdCloudWatch),
         BasicCredentials(awsAccessKeyId, awsSecretKey))
       builder.
         kinesisCredentials(kinesisCredsProvider).
+        dynamoDBCredentials(dynamoDBCredsProvider).
+        cloudWatchCredentials(cloudWatchCredsProvider).
         buildWithMessageHandler(KinesisInputDStream.defaultMessageHandler)
     } else {
       if (awsAccessKeyId == null && awsSecretKey == null) {
@@ -89,5 +113,4 @@ private class KinesisUtilsPythonHelper {
       }
     }
   }
-
 }
